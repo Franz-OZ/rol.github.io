@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Political finance — issues by country (2020–2025)</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#f5f4ef; --bg3:#efeee8;
+    --text:#2b2a28; --text2:#5f5e5a; --text3:#8a8983;
+    --border:rgba(0,0,0,.14); --border2:rgba(0,0,0,.26);
+    --radius:12px; --radius-sm:8px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#26251f; --bg2:#2f2e27; --bg3:#3a382f;
+      --text:#ecebe4; --text2:#b4b2a9; --text3:#8a8983;
+      --border:rgba(255,255,255,.16); --border2:rgba(255,255,255,.3);
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+    line-height:1.6;padding:24px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px;margin:0 auto;}
+  h1{font-size:22px;font-weight:500;margin:0 0 4px;}
+  .sub{font-size:13px;color:var(--text2);margin:0 0 20px;}
+  h3{font-weight:500;}
+  #legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+    margin-bottom:16px;font-size:12px;color:var(--text2);}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px;}
+  #map{width:100%;background:var(--bg2);border-radius:var(--radius);}
+  #panel{min-height:120px;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2 class="sr-only">Map of Europe shading eight countries by number of political finance issues; hovering or tapping a country shows each issue with its status across 2020 to 2025.</h2>
+ 
+<h1>Political finance: issues by country</h1>
+<p class="sub">EC Rule of Law Report recommendations, 2020–2025. Hover (or tap) a shaded country to see each issue's progress.</p>
+ 
+<div id="legend"></div>
+ 
+<div class="grid">
+  <div id="map" role="img" aria-label="Map of Europe with eight countries shaded by issue count"></div>
+  <div id="panel"></div>
+</div>
+</div>
+ 
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const YEARS=["2020","2021","2022","2023","2024","2025"];
+const DATA={"Slovakia":[{"t":"Oversight","i":"Limited capacities of oversight bodies","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO PROGRESS"}},{"t":"Oversight","i":"Need for strengthening of oversight mechanisms","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO PROGRESS"}},{"t":"Oversight","i":"Concerns over political nominations in oversight bodies","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO PROGRESS"}},{"t":"Donation rules","i":"No limit for cash donations during the pre-election period","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Campaign finance","i":"Rapid legislative changes before elections","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Campaign finance","i":"Risk of bypassing campaign transparency rules (use of PR agencies)","k":{"2023":"MENTIONED","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Transparency","i":"Limited transparency at sub-national level","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Criminalization","i":"Weak criminalization of bribery (crime of electoral corruption)","k":{"2022":"MENTIONED","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Criminalization","i":"Insufficient sanctions for electoral corruption","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Criminalization","i":"Risk of excessive government access to internal party information (new party-law reform)","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}}],"Germany":[{"t":"Oversight","i":"Insufficient human and financial resources of the oversight body","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Oversight","i":"Oversight body's lack of access to tax information of donors","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Donation rules","i":"Need for lower donation thresholds for public disclosure","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"NO FOLLOW-UP","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Donation rules","i":"No caps on donations","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Donation rules","i":"Lack of regulation of party sponsoring","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"NO PROGRESS","2024":"SOME PROGRESS","2025":"IMPLEMENTED"}},{"t":"Donation rules","i":"Risk of dependency on private donations","k":{"2023":"MENTIONED","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Donation rules","i":"Forwarding of political donations (Weiterleitungsspenden)","k":{"2025":"MENTIONED"}},{"t":"Campaign finance","i":"Regulation of hidden third-party campaigns","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"SOME PROGRESS","2025":"IMPLEMENTED"}},{"t":"Transparency","i":"Significant time lapse between party income and its disclosure in reporting","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Transparency","i":"Inaccessible format of the publicly available reporting data","k":{"2025":"MENTIONED"}}],"Italy":[{"t":"Oversight","i":"Lack of capacities and resources of the oversight and supervisory bodies","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"SOME PROGRESS"}},{"t":"Oversight","i":"Need to increase autonomy of the Committee for Transparency and Control of Political Parties","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Donation rules","i":"Significant reliance/dependency of political parties on private donations","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Donation rules","i":"Channeling donations through political foundations and associations (obscuring the source)","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Donation rules","i":"Relatively high ceiling for direct private donations","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Transparency","i":"Lack of a centralised, single, machine-readable register","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Transparency","i":"Publicly available political-finance information lacks consistent structure and formats","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Criminalization","i":"Need to consolidate and strengthen existing rules on parties and their financing","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}}],"Serbia":[{"t":"Oversight","i":"Lacking effectiveness of the oversight mechanism","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Campaign finance","i":"Absence of campaign expenditure limits","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Campaign finance","i":"Lack of rules on campaigning by third parties","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Criminalization","i":"Criminal code lacks provisions to effectively criminalize illicit financing of political entities","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}},{"t":"Criminalization","i":"Delays in issuing decisions on suspected misuse of public resources","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}}],"Bulgaria":[{"t":"Oversight","i":"Insufficient resources of the political finance oversight body","k":{"2023":"MENTIONED","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Transparency","i":"Lack of clarity on follow-up of criminal allegations from audits on party financing","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}}],"Hungary":[{"t":"Campaign finance","i":"Social-media political ads (incl. third-party-funded) fall outside the legal definition, so are unaudited","k":{"2022":"MENTIONED","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Campaign finance","i":"Campaign activity outside the official 50-day pre-election period is not covered by law","k":{"2023":"MENTIONED","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Campaign finance","i":"Loopholes letting spending limits be circumvented via third parties remain unaddressed","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Campaign finance","i":"Cap on political campaign expenses removed","k":{"2025":"MENTIONED"}},{"t":"Criminalization","i":"Sources of party income and length of campaign periods lack clarity","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Criminalization","i":"Lack of monitoring mechanisms for parties receiving state subsidies","k":{"2020":"MENTIONED","2021":"NO FOLLOW-UP","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}}],"Ireland":[{"t":"Transparency","i":"Need for modernisation and digitalisation of data collection on political party financing","k":{"2023":"MENTIONED","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Criminalization","i":"Whether the Electoral Commission should take over some SIPO functions on party financing","k":{"2025":"MENTIONED"}},{"t":"Criminalization","i":"Comprehensive review of the regulatory framework (Electoral Act 1997)","k":{"2023":"MENTIONED","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}}],"Netherlands":[{"t":"Transparency","i":"Limited restrictions on political party financing","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Transparency","i":"Lacking legal framework for financing local and regional parties","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Transparency","i":"Lacking framework for the registration of donations to political parties","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}}]};
+ 
+const STATUS={
+  "IMPLEMENTED":{fill:"#639922",txt:"#173404"},
+  "SOME PROGRESS":{fill:"#5DCAA5",txt:"#04342C"},
+  "MENTIONED":{fill:"#B4B2A9",txt:"#2C2C2A"},
+  "NO PROGRESS":{fill:"#F0997B",txt:"#4A1B0C"},
+  "NO FOLLOW-UP":{fill:"transparent",txt:"var(--text3)"}
+};
+const HATCH="background:repeating-linear-gradient(45deg,transparent,transparent 3px,var(--border) 3px,var(--border) 4px);border:1px dashed var(--border2);";
+ 
+const counts=Object.fromEntries(Object.entries(DATA).map(([k,v])=>[k,v.length]));
+const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+const scheme=isDark?['#26215C','#3C3489','#534AB7','#7F77DD']:['#EEEDFE','#CECBF6','#AFA9EC','#7F77DD'];
+const color=d3.scaleThreshold().domain([3,6,9]).range(scheme);
+ 
+const sBuckets=[['Mentioned','#B4B2A9'],['Some progress','#5DCAA5'],['Implemented','#639922'],['No progress','#F0997B']];
+document.getElementById('legend').innerHTML=
+  sBuckets.map(([lbl,c])=>`<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;background:${c};"></span>${lbl}</span>`).join('')+
+  `<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;${HATCH}"></span>No follow-up</span>`;
+ 
+const order=["Oversight","Donation rules","Campaign finance","Transparency","Criminalization"];
+ 
+function issueBlock(it){
+  const cells=YEARS.map(y=>{
+    const raw=it.k[y];
+    if(!raw)return `<div title="${y}: \u2014" style="position:relative;flex:1;height:18px;border-radius:3px;background:var(--bg2);opacity:.4;"></div>`;
+    const st=STATUS[raw]||STATUS.MENTIONED;
+    const drop=raw==="NO FOLLOW-UP";
+    const bg=drop?HATCH:`background:${st.fill};`;
+    return `<div title="${y}: ${raw}" style="position:relative;flex:1;height:18px;border-radius:3px;${bg}"></div>`;
+  }).join('');
+  return `<div style="padding:5px 0;">
+    <div style="font-size:12.5px;line-height:1.35;color:var(--text);margin-bottom:4px;">${it.i}</div>
+    <div style="display:flex;gap:3px;">${cells}</div>
+  </div>`;
+}
+ 
+function panelFor(country){
+  const p=document.getElementById('panel');
+  const rows=DATA[country];
+  if(!rows){p.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:120px;color:var(--text3);font-size:13px;">Hover a shaded country to see each issue's progress from 2020 to 2025.</div>`;return;}
+  const byTheme={};rows.forEach(r=>{(byTheme[r.t]=byTheme[r.t]||[]).push(r);});
+  const yearHead=`<div style="display:flex;gap:3px;margin:2px 0 8px;">${YEARS.map(y=>`<div style="flex:1;text-align:center;font-size:9.5px;color:var(--text3);">'${y.slice(2)}</div>`).join('')}</div>`;
+  const body=order.filter(t=>byTheme[t]).map(t=>
+    `<div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:2px;">${t}</div>
+      ${byTheme[t].map(issueBlock).join('')}
+    </div>`).join('');
+  p.innerHTML=`<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+      <h3 style="margin:0;font-size:18px;">${country}</h3>
+      <span style="font-size:12px;color:var(--text3);">${rows.length} issues \u00b7 2020\u20132025</span>
+    </div>
+    ${yearHead}${body}
+  </div>`;
+}
+ 
+const W=720,H=560;
+const svg=d3.select('#map').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+const proj=d3.geoConicConformal().rotate([-10,0]).center([5,54]).scale(700).translate([W/2,H/2]);
+const path=d3.geoPath(proj);
+let current=null;
+ 
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world=>{
+  const countries=topojson.feature(world,world.objects.countries).features;
+  svg.append('g').selectAll('path').data(countries).join('path')
+    .attr('d',path)
+    .attr('fill',d=>{const c=counts[d.properties.name];return c?color(c):(isDark?'#2C2C2A':'#FFFFFF');})
+    .attr('stroke',isDark?'rgba(255,255,255,.18)':'rgba(0,0,0,.18)').attr('stroke-width',0.6)
+    .style('cursor',d=>counts[d.properties.name]?'pointer':'default')
+    .on('mouseenter',function(e,d){if(!counts[d.properties.name])return;d3.select(this).attr('stroke',isDark?'#fff':'#000').attr('stroke-width',1.4).raise();panelFor(d.properties.name);})
+    .on('mouseleave',function(e,d){d3.select(this).attr('stroke',isDark?'rgba(255,255,255,.18)':'rgba(0,0,0,.18)').attr('stroke-width',0.6);panelFor(current);})
+    .on('click',function(e,d){if(!counts[d.properties.name])return;current=d.properties.name;panelFor(current);});
+  countries.filter(d=>counts[d.properties.name]).forEach(d=>{
+    const c=path.centroid(d);
+    if(c[0]&&c[1])svg.append('text').attr('x',c[0]).attr('y',c[1]).attr('text-anchor','middle').attr('font-size','10px').attr('font-weight','500').attr('fill',isDark?'#EEEDFE':'#26215C').attr('pointer-events','none').text(counts[d.properties.name]);
+  });
+  panelFor(null);
+}).catch(()=>{
+  document.getElementById('map').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px;">Map topology could not be loaded (needs internet access to jsDelivr).</div>';
+});
+</script>
+</body>
+</html>
