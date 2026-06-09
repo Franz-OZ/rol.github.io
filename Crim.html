@@ -1,0 +1,143 @@
+
+raw
+Criminalization europe map · HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Criminalization — issues by country (2020–2025)</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#f5f4ef; --bg3:#efeee8;
+    --text:#2b2a28; --text2:#5f5e5a; --text3:#8a8983;
+    --border:rgba(0,0,0,.14); --border2:rgba(0,0,0,.26);
+    --radius:12px; --radius-sm:8px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#26251f; --bg2:#2f2e27; --bg3:#3a382f;
+      --text:#ecebe4; --text2:#b4b2a9; --text3:#8a8983;
+      --border:rgba(255,255,255,.16); --border2:rgba(255,255,255,.3);
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+    line-height:1.6;padding:24px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px;margin:0 auto;}
+  h1{font-size:22px;font-weight:500;margin:0 0 4px;}
+  .sub{font-size:13px;color:var(--text2);margin:0 0 20px;}
+  h3{font-weight:500;}
+  #legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+    margin-bottom:16px;font-size:12px;color:var(--text2);}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px;}
+  #map{width:100%;background:var(--bg2);border-radius:var(--radius);}
+  #panel{min-height:120px;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2 class="sr-only">Map of Europe shading seven countries by number of criminalization issues; hovering or tapping a country shows each issue with its status across 2020 to 2025.</h2>
+ 
+<h1>Criminalization: issues by country</h1>
+<p class="sub">EC Rule of Law Report recommendations, 2020–2025. Hover (or tap) a shaded country to see each issue's progress.</p>
+ 
+<div id="legend"></div>
+ 
+<div class="grid">
+  <div id="map" role="img" aria-label="Map of Europe with seven countries shaded by issue count"></div>
+  <div id="panel"></div>
+</div>
+</div>
+ 
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const YEARS=["2020","2021","2022","2023","2024","2025"];
+const DATA={"Slovakia":[{"t":"Corruption offences & scope","i":"Amendments to the criminal offence of electoral corruption and to transparency requirements in political party finance","k":{"2023":"MENTIONED","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Enforcement & prosecution","i":"Public contracting remains vulnerable to risks of corruption","k":{"2023":"MENTIONED","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Ethics & anti-corruption reform","i":"Update of the 2019 National Anti-Corruption Programme","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}}],"Italy":[{"t":"Corruption offences & scope","i":"Attempts to abrogate the offence of abuse of office","k":{"2023":"MENTIONED","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Trading in influence","i":"Attempts to limit of the scope of the offence of the trading in influence","k":{"2023":"MENTIONED","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Enforcement & prosecution","i":"Draft law proposing changes to the statute of limitation periods would reduce the time available to conduct proceedings for criminal offences","k":{"2023":"MENTIONED","2024":"NO PROGRESS","2025":"NO PROGRESS"}}],"Hungary":[{"t":"Corruption offences & scope","i":"Definition of ‘foreign public official’ does not include officials of foreign public enterprises","k":{"2020":"MENTIONED","2021":"IMPLEMENTED"}},{"t":"Corruption offences & scope","i":"Legislation allows reducing or entirely dropping criminal sanctions for Corruption-related offences in certain circumstances.","k":{"2022":"MENTIONED","2023":"SOME PROGRESS"}}],"Serbia":[{"t":"Corruption offences & scope","i":"Illicit enrichment is not criminalised.","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Foreign bribery & corporate liability","i":"Serbia is not a signatory party to the OECD Anti-Bribery Convention","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Enforcement & prosecution","i":"The role and mandate of the Prosecutor’s Office for Organised Crime is insufficiently regulated in the law.","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}}],"Germany":[{"t":"Trading in influence","i":"Trading in influence/ influence peddling - federal level","k":{"2023":"MENTIONED","2024":"IMPLEMENTED"}},{"t":"Trading in influence","i":"Need to extend the scope of the trading in influence provisions to elected officials on at the local level and other categories of public officials","k":{"2025":"MENTIONED"}},{"t":"Foreign bribery & corporate liability","i":"Legal reform to strengthen corporate criminal liability","k":{"2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}}],"Netherlands":[{"t":"Trading in influence","i":"No prohibition on trading influence despite independent reviews pointing to necessary legal revision","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Foreign bribery & corporate liability","i":"Investigation and prosecution of foreign bribery cases facing difficulties","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"SOME PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Foreign bribery & corporate liability","i":"Legal obstructions for use of large datasets for the detection of foreign bribery","k":{"2023":"MENTIONED","2024":"SOME PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Foreign bribery & corporate liability","i":"Entry into force of legislation with regard to self-monitoring and self-reporting of economic crimes (including foreign bribery)","k":{"2025":"MENTIONED"}},{"t":"Enforcement & prosecution","i":"Lack of central anti-corruption agency","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}},{"t":"Ethics & anti-corruption reform","i":"Work on the implementation of the EU anti-corruption directive","k":{"2025":"MENTIONED"}}],"Ireland":[{"t":"Foreign bribery & corporate liability","i":"Reform of previous anti-corruption laws, including foreign bribery and extraterritorial reach if the relevant conduct would be an offence if committed in Ireland","k":{"2021":"IMPLEMENTED"}},{"t":"Foreign bribery & corporate liability","i":"Lack of legislation providing for plea deals linked to foreign bribery means that reporting of foreign bribery involving companies operating in Ireland predominantly takes place in jurisdictions that allow such plea deals, i.e. US and UK","k":{"2023":"MENTIONED","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Enforcement & prosecution","i":"Revision of the law on criminal procedure to increase the efficiency of dealing with complex criminal offences such as white-collar crimes, including preliminary trial hearings to prepare parties ahead of trial","k":{"2020":"MENTIONED","2021":"SOME PROGRESS","2022":"IMPLEMENTED"}},{"t":"Enforcement & prosecution","i":"Amending criminal justice legislation to allow for standalone search warrants to allow police to demand passwords to electronic devices owned or controlled by persons subject to arrest warrants","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Enforcement & prosecution","i":"New law to strengthen the governance, oversight and accountability of the national police service","k":{"2023":"MENTIONED","2024":"IMPLEMENTED"}},{"t":"Enforcement & prosecution","i":"Need to include and criminalise bid-rigging offences in competition law and public procurement rules","k":{"2022":"MENTIONED","2023":"IMPLEMENTED"}},{"t":"Ethics & anti-corruption reform","i":"Reform of previous anti-corruption laws, including failure to report provisions on bribery and corruption","k":{"2021":"IMPLEMENTED"}},{"t":"Ethics & anti-corruption reform","i":"Strengthening the law on public sector ethics to address breaches of ethics obligations by former parliamentarians","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Ethics & anti-corruption reform","i":"Provide legal solutions to cases of misconduct in public office, including by former parliamentarians","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Ethics & anti-corruption reform","i":"Strengthen the existing ethics framework, based upon the lapsed Public Sector Standards Bill 2015, including a uniform and consolidated values-based normative framework","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Ethics & anti-corruption reform","i":"Legislative and other measures to address corruption risks in high-risk sectors (planning and development; public and private procurement, public utilities and natural resources, match-fixing and the financial sector)","k":{"2025":"SOME PROGRESS"}}]};
+ 
+const STATUS={
+  "IMPLEMENTED":{fill:"#639922",txt:"#173404"},
+  "SOME PROGRESS":{fill:"#5DCAA5",txt:"#04342C"},
+  "MENTIONED":{fill:"#B4B2A9",txt:"#2C2C2A"},
+  "NO PROGRESS":{fill:"#F0997B",txt:"#4A1B0C"},
+  "NO FOLLOW-UP":{fill:"transparent",txt:"var(--text3)"}
+};
+const HATCH="background:repeating-linear-gradient(45deg,transparent,transparent 3px,var(--border) 3px,var(--border) 4px);border:1px dashed var(--border2);";
+ 
+const counts=Object.fromEntries(Object.entries(DATA).map(([k,v])=>[k,v.length]));
+const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+const scheme=isDark?['#26215C','#3C3489','#534AB7','#7F77DD']:['#EEEDFE','#CECBF6','#AFA9EC','#7F77DD'];
+const color=d3.scaleThreshold().domain([3,6,9]).range(scheme);
+ 
+const sBuckets=[['Mentioned','#B4B2A9'],['Some progress','#5DCAA5'],['Implemented','#639922'],['No progress','#F0997B']];
+document.getElementById('legend').innerHTML=
+  sBuckets.map(([lbl,c])=>`<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;background:${c};"></span>${lbl}</span>`).join('')+
+  `<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;${HATCH}"></span>No follow-up</span>`;
+ 
+const order=["Corruption offences & scope","Trading in influence","Foreign bribery & corporate liability","Enforcement & prosecution","Ethics & anti-corruption reform"];
+ 
+function issueBlock(it){
+  const cells=YEARS.map(y=>{
+    const raw=it.k[y];
+    if(!raw)return `<div title="${y}: \u2014" style="position:relative;flex:1;height:18px;border-radius:3px;background:var(--bg2);opacity:.4;"></div>`;
+    const st=STATUS[raw]||STATUS.MENTIONED;
+    const drop=raw==="NO FOLLOW-UP";
+    const bg=drop?HATCH:`background:${st.fill};`;
+    return `<div title="${y}: ${raw}" style="position:relative;flex:1;height:18px;border-radius:3px;${bg}"></div>`;
+  }).join('');
+  return `<div style="padding:5px 0;">
+    <div style="font-size:12.5px;line-height:1.35;color:var(--text);margin-bottom:4px;">${it.i}</div>
+    <div style="display:flex;gap:3px;">${cells}</div>
+  </div>`;
+}
+ 
+function panelFor(country){
+  const p=document.getElementById('panel');
+  const rows=DATA[country];
+  if(!rows){p.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:120px;color:var(--text3);font-size:13px;">Hover a shaded country to see each issue's progress from 2020 to 2025.</div>`;return;}
+  const byTheme={};rows.forEach(r=>{(byTheme[r.t]=byTheme[r.t]||[]).push(r);});
+  const yearHead=`<div style="display:flex;gap:3px;margin:2px 0 8px;">${YEARS.map(y=>`<div style="flex:1;text-align:center;font-size:9.5px;color:var(--text3);">'${y.slice(2)}</div>`).join('')}</div>`;
+  const body=order.filter(t=>byTheme[t]).map(t=>
+    `<div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:2px;">${t}</div>
+      ${byTheme[t].map(issueBlock).join('')}
+    </div>`).join('');
+  p.innerHTML=`<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+      <h3 style="margin:0;font-size:18px;">${country}</h3>
+      <span style="font-size:12px;color:var(--text3);">${rows.length} issues \u00b7 2020\u20132025</span>
+    </div>
+    ${yearHead}${body}
+  </div>`;
+}
+ 
+const W=720,H=560;
+const svg=d3.select('#map').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+const proj=d3.geoConicConformal().rotate([-10,0]).center([5,54]).scale(700).translate([W/2,H/2]);
+const path=d3.geoPath(proj);
+let current=null;
+ 
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world=>{
+  const countries=topojson.feature(world,world.objects.countries).features;
+  svg.append('g').selectAll('path').data(countries).join('path')
+    .attr('d',path)
+    .attr('fill',d=>{const c=counts[d.properties.name];return c?color(c):(isDark?'#2C2C2A':'#FFFFFF');})
+    .attr('stroke',isDark?'rgba(255,255,255,.18)':'rgba(0,0,0,.18)').attr('stroke-width',0.6)
+    .style('cursor',d=>counts[d.properties.name]?'pointer':'default')
+    .on('mouseenter',function(e,d){if(!counts[d.properties.name])return;d3.select(this).attr('stroke',isDark?'#fff':'#000').attr('stroke-width',1.4).raise();panelFor(d.properties.name);})
+    .on('mouseleave',function(e,d){d3.select(this).attr('stroke',isDark?'rgba(255,255,255,.18)':'rgba(0,0,0,.18)').attr('stroke-width',0.6);panelFor(current);})
+    .on('click',function(e,d){if(!counts[d.properties.name])return;current=d.properties.name;panelFor(current);});
+  countries.filter(d=>counts[d.properties.name]).forEach(d=>{
+    const c=path.centroid(d);
+    if(c[0]&&c[1])svg.append('text').attr('x',c[0]).attr('y',c[1]).attr('text-anchor','middle').attr('font-size','10px').attr('font-weight','500').attr('fill',isDark?'#EEEDFE':'#26215C').attr('pointer-events','none').text(counts[d.properties.name]);
+  });
+  panelFor(null);
+}).catch(()=>{
+  document.getElementById('map').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px;">Map topology could not be loaded (needs internet access to jsDelivr).</div>';
+});
+</script>
+</body>
+</html>
