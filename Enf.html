@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enforcement — issues by country (2020–2025)</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#f5f4ef; --bg3:#efeee8;
+    --text:#2b2a28; --text2:#5f5e5a; --text3:#8a8983;
+    --border:rgba(0,0,0,.14); --border2:rgba(0,0,0,.26);
+    --radius:12px; --radius-sm:8px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#26251f; --bg2:#2f2e27; --bg3:#3a382f;
+      --text:#ecebe4; --text2:#b4b2a9; --text3:#8a8983;
+      --border:rgba(255,255,255,.16); --border2:rgba(255,255,255,.3);
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+    line-height:1.6;padding:24px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px;margin:0 auto;}
+  h1{font-size:22px;font-weight:500;margin:0 0 4px;}
+  .sub{font-size:13px;color:var(--text2);margin:0 0 20px;}
+  h3{font-weight:500;}
+  #legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+    margin-bottom:16px;font-size:12px;color:var(--text2);}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px;}
+  #map{width:100%;background:var(--bg2);border-radius:var(--radius);}
+  #panel{min-height:120px;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2 class="sr-only">Map of Europe shading eight countries by number of enforcement issues; hovering or tapping a country shows each issue with its status across 2020 to 2025.</h2>
+
+<h1>Enforcement: issues by country</h1>
+<p class="sub">EC Rule of Law Report recommendations, 2020–2025. Hover (or tap) a shaded country to see each issue's progress.</p>
+
+<div id="legend"></div>
+
+<div class="grid">
+  <div id="map" role="img" aria-label="Map of Europe with eight countries shaded by issue count"></div>
+  <div id="panel"></div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const YEARS=["2020","2021","2022","2023","2024","2025"];
+const DATA={"Slovakia":[{"t":"Specialised bodies & resourcing","i":"Dissolved Special Prosecutor’s Office","k":{"2024":"MENTIONED","2025":"MENTIONED"}},{"t":"Specialised bodies & resourcing","i":"The abolishment of specialised anti-corruption bodies","k":{"2024":"MENTIONED","2025":"MENTIONED"}},{"t":"Prosecutorial & judicial independence","i":"Article 6(10) of the Act on Prosecutors still makes it possible for the immediate superior to remove a case from the subordinated prosecutor and decide on it.","k":{"2025":"MENTIONED"}}],"Germany":[{"t":"Specialised bodies & resourcing","i":"FIU - low personal and technical resources","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"IMPLEMENTED"}},{"t":"Investigation & prosecution capacity","i":"limited scope of police report","k":{"2022":"MENTIONED","2023":"MENTIONED","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Investigation & prosecution capacity","i":"Need for improved financial investigation and law enforcement capacities on transnational financial flows to address, increasing risks of strategic corruption","k":{"2025":"MENTIONED"}},{"t":"Investigation & prosecution capacity","i":"Addressing gaps in beneficial ownership transparency","k":{"2025":"MENTIONED"}},{"t":"Coordination, strategy & data","i":"Low level of enforcement of corporate liability in foreign bribery","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}}],"Ireland":[{"t":"Specialised bodies & resourcing","i":"Limited resourcing for the Anti-Bribery & Corruption Unit (ABCU) of the Garda National Economic Crime Bureau (GNECB), which operates at limited capacity","k":{"2020":"MENTIONED","2021":"SOME PROGRESS","2022":"NO PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Specialised bodies & resourcing","i":"Limited resources of the Standards in Public Office Commission (SIPO) in view of its wide remit","k":{"2020":"MENTIONED","2021":"NO FOLLOW-UP","2022":"NO PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Specialised bodies & resourcing","i":"Limited resourcing for the Garda National Economic Crime Bureau (GNECB)","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"NO PROGRESS"}},{"t":"Specialised bodies & resourcing","i":"Limited resourcing for the Office of the Director of Public Prosecutions (ODPP), including the Special Financial Crime Unit, to deal with bribery and corruption","k":{"2020":"MENTIONED","2021":"MENTIONED","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Specialised bodies & resourcing","i":"Need for increased specialist capacity for the Office of the Director of Public Prosecutions (ODPP) to deal with complex financial crime, including digital forensics and forensic accounting","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Specialised bodies & resourcing","i":"Insufficient number of forensic accountants assigned to the Garda National Economic Crime Bureau (GNECB)","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Specialised bodies & resourcing","i":"Inability of the Garda National Economic Crime Bureau (GNECB) to deliver training on economic crime and corruption due to resourcing limitations","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Investigation & prosecution capacity","i":"The collection, examination and analysis of high volumes of digital data and electronic evidence (including from mobile phones, computers, cloud storage and social networks) poses challenges for prosecutors and investigators in corruption cases","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Investigation & prosecution capacity","i":"Difficulties in collaboration and information-sharing between the Garda National Economic Crime Bureau (GNECB) and the Corporate Enforcement Authority (CEA) due to privacy constraints","k":{"2023":"MENTIONED","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Investigation & prosecution capacity","i":"Difficulties in cooperation between Irish authorities and the European Public Prosecutors Office (EPPO) due to legal constraints","k":{"2023":"MENTIONED","2024":"SOME PROGRESS","2025":"IMPLEMENTED"}},{"t":"Investigation & prosecution capacity","i":"Difficulties for police investigating foreign bribery due to lack of cooperation through Mutual Legal Assistance (MLA), in particular the gathering of evidence from third countries which would be admissible in Irish courts","k":{"2023":"MENTIONED","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Investigation & prosecution capacity","i":"Need for Ireland to join the European Public Prosecutors Office (EPPO)","k":{"2025":"MENTIONED"}},{"t":"High-level corruption track record","i":"Length, cost and inadmissibility of evidence from Tribunals of Inquiry used for some high-level corruption cases","k":{"2020":"MENTIONED","2021":"NO FOLLOW-UP","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Prosecutorial & judicial independence","i":"Reform of the framework for independent ombudsman investigations into complaints about the police","k":{"2023":"MENTIONED","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Coordination, strategy & data","i":"Establish a permanent, cross-sectoral advisory council to coordinate and lead a holistic approach to economic crimes and corruption","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"IMPLEMENTED"}},{"t":"Coordination, strategy & data","i":"Develop a multi-annual strategy and accompanying action plan for combating economic crime and corruption","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Coordination, strategy & data","i":"Need to address public procurement as a high-risk area for bribery, fraud and corruption","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Coordination, strategy & data","i":"Establish a permanent Economic Crime Forum of senior representatives from investigatory agencies to enhance cooperation and information exchange on corruption","k":{"2022":"MENTIONED","2023":"IMPLEMENTED"}},{"t":"Coordination, strategy & data","i":"The Garda Anti-Corruption Unit (GACU) follows-up on recommendations of the Garda Síochána Inspectorate Report of 2020 on internal corruption within the police, including building trust among police officers, developing better internal anti-corruption policies and delivering an updated learning programme and briefings","k":{"2023":"MENTIONED","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Coordination, strategy & data","i":"The Advisory Council on Economic Crime and Corruption does not include representation from civil society bodies focused on integrity and anti-corruption","k":{"2023":"MENTIONED","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Coordination, strategy & data","i":"Need to establish requirement for annual report on the implementation of the National Strategy to Combat Economic Crime and Corruption, once it is published","k":{"2025":"MENTIONED"}},{"t":"Coordination, strategy & data","i":"Inability of the Standards in Public Office Commission (SIPO) to appoint inquiry officer to conduct a preliminary inquiry launched on its own initiative (as opposed to following a complaint), creating a high threshold for launching full investigations on its own initiative","k":{"2020":"MENTIONED","2021":"NO FOLLOW-UP","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Coordination, strategy & data","i":"Full investigation hearing may only proceed when all six members of the Standards in Public Office Commission (SIPO) are present (rest of SIPO’s work can be pursued with a quorum of three members)","k":{"2020":"MENTIONED","2021":"NO FOLLOW-UP","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Coordination, strategy & data","i":"Strengthen the existing ethics framework, in particular the monitoring and enforcement capacity of the Standards in Public Office Commission (SIPO), including its investigative capacity and enforcement powers","k":{"2022":"MENTIONED","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}}],"Italy":[{"t":"Specialised bodies & resourcing","i":"Lack of resources and limited experience and legal expertise affect the capacity of law enforcement authorities to pursue and prosecute foreign bribery effectively","k":{"2021":"SOME PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO FOLLOW-UP","2025":"NO PROGRESS"}},{"t":"Specialised bodies & resourcing","i":"Need for improved integrity measures for police force","k":{"2025":"SOME PROGRESS"}},{"t":"Investigation & prosecution capacity","i":"Need to enhance digitalisation and interconnection of various registries","k":{"2022":"MENTIONED","2023":"SOME PROGRESS","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Investigation & prosecution capacity","i":"Lack of operational Ultimate Beneficial Ownership register","k":{"2023":"SOME PROGRESS","2024":"NO FOLLOW-UP","2025":"NO PROGRESS"}},{"t":"High-level corruption track record","i":"Excessive disposition times (trial length)","k":{"2021":"SOME PROGRESS","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"High-level corruption track record","i":"Need for up-to-date statistics on investigations of corruption by the police as well as on prosecutions and convictions by the courts","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Prosecutorial & judicial independence","i":"Draft law to reform the Court of Auditors may weaken the anticorruption enforcement","k":{"2025":"NO PROGRESS"}}],"Serbia":[{"t":"Specialised bodies & resourcing","i":"Specialised departments for combating corruption are understaffed","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}},{"t":"Specialised bodies & resourcing","i":"The specialised organised crime unit in the police investigating high-level corruption offences lacks sufficient staff.","k":{"2025":"MENTIONED"}},{"t":"Investigation & prosecution capacity","i":"Proactive financial investigations are not common practice, limiting both effective asset recovery and the ability to gather evidence of unexplained wealth.","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}},{"t":"High-level corruption track record","i":"Challenges in establishing a robust track record of investigations, indictments and final convictions in high-level corruption cases, including the seizure and confiscation of criminal assets.","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Prosecutorial & judicial independence","i":"The Prosecutor’s Office for Organised Crime, which has jurisdiction over high-level corruption cases, remains understaffed","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Prosecutorial & judicial independence","i":"Insufficient transparency in the prosecution service and weak oversight of dismissed corruption cases, and delays continued to affect public trust and accountability","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Prosecutorial & judicial independence","i":"There is risk of politically motivated interference into high-level corruption investigations and prosecutions although new safeguards have been introduced","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}}],"Bulgaria":[{"t":"Investigation & prosecution capacity","i":"Need for amendments to Criminal Code to improve efficiency of investigations and trials","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"IMPLEMENTED"}},{"t":"Investigation & prosecution capacity","i":"Ineffective detection and prosecution of foreign bribery cases","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"High-level corruption track record","i":"Termination of corruption investigations without judicial review remains possible in some cases (Anticorruption Commission).","k":{"2022":"MENTIONED","2023":"SOME PROGRESS","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"High-level corruption track record","i":"Lack of a solid track record of final convictions in high‑level corruption cases.","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}}],"Hungary":[{"t":"High-level corruption track record","i":"No new investigations into foreign bribery","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"High-level corruption track record","i":"Prosecution of high-level corruption (including government officials or their immediate circle) remains very limited","k":{"2020":"MENTIONED","2021":"SOME PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"High-level corruption track record","i":"Lengthy court proceedings for high level corruption cases","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}},{"t":"Prosecutorial & judicial independence","i":"independent control mechanisms remain insufficient for detecting corruption","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Prosecutorial & judicial independence","i":"Lack of full implementation of the GRECO recommendations as regards the effective functioning of the prosecution","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO FOLLOW-UP","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Prosecutorial & judicial independence","i":"risk of low accountability, in view of the lack of judicial review for prosecutorial decisions not to investigate and prosecute corruption allegations","k":{"2022":"MENTIONED","2023":"NO FOLLOW-UP","2024":"SOME PROGRESS","2025":"SOME PROGRESS"}},{"t":"Prosecutorial & judicial independence","i":"Risk of impunity caused by a disparity in the treatment of corruption cases for political purposes, which potentially breaches the principle of equality before the law","k":{"2023":"MENTIONED","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Prosecutorial & judicial independence","i":"The risk of undue interference with individual cases persists in the prosecution service, while also the police’s operational independence appears to be affected by political influence on the prosecution service.","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Coordination, strategy & data","i":"Risks of clientelism, favouritism and nepotism in high-level public administration remain unaddressed","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Coordination, strategy & data","i":"Information or data about reliability testing, including numbers of corruption suspicions reported to the prosecution service, is no longer publicly available for those public officials who are covered by the mandate of the Constitution Protection Office.","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}}],"Netherlands":[{"t":"Coordination, strategy & data","i":"Lengthy or inefficient procedures with the whistleblower authority","k":{"2020":"MENTIONED","2021":"NO FOLLOW-UP","2022":"NO PROGRESS"}},{"t":"Coordination, strategy & data","i":"Limited progress in the fight against corruption within law enforcement","k":{"2020":"MENTIONED","2021":"NO FOLLOW-UP","2022":"NO PROGRESS"}},{"t":"Coordination, strategy & data","i":"No continuous vetting of law enforcement officers throughout their career","k":{"2020":"MENTIONED","2021":"SOME PROGRESS","2022":"SOME PROGRESS","2023":"SOME PROGRESS"}},{"t":"Coordination, strategy & data","i":"Lacking legal protections for whistleblowers","k":{"2021":"MENTIONED","2022":"NO PROGRESS"}},{"t":"Coordination, strategy & data","i":"Combatting subversive and organised crime, including corruption","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS"}},{"t":"Coordination, strategy & data","i":"Progress on the transposition of the EU whistleblower protection directive","k":{"2022":"MENTIONED"}},{"t":"Coordination, strategy & data","i":"Lack of centralised anti-corruption strategy","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"SOME PROGRESS"}}]};
+
+const STATUS={
+  "IMPLEMENTED":{fill:"#639922",txt:"#173404"},
+  "SOME PROGRESS":{fill:"#5DCAA5",txt:"#04342C"},
+  "MENTIONED":{fill:"#B4B2A9",txt:"#2C2C2A"},
+  "NO PROGRESS":{fill:"#F0997B",txt:"#4A1B0C"},
+  "NO FOLLOW-UP":{fill:"transparent",txt:"var(--text3)"}
+};
+const HATCH="background:repeating-linear-gradient(45deg,transparent,transparent 3px,var(--border) 3px,var(--border) 4px);border:1px dashed var(--border2);";
+
+const counts=Object.fromEntries(Object.entries(DATA).map(([k,v])=>[k,v.length]));
+const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+const scheme=isDark?['#26215C','#3C3489','#534AB7','#7F77DD']:['#EEEDFE','#CECBF6','#AFA9EC','#7F77DD'];
+const color=d3.scaleThreshold().domain([5,9,15]).range(scheme);
+
+const sBuckets=[['Mentioned','#B4B2A9'],['Some progress','#5DCAA5'],['Implemented','#639922'],['No progress','#F0997B']];
+document.getElementById('legend').innerHTML=
+  sBuckets.map(([lbl,c])=>`<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;background:${c};"></span>${lbl}</span>`).join('')+
+  `<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;${HATCH}"></span>No follow-up</span>`;
+
+const order=["Specialised bodies & resourcing","Investigation & prosecution capacity","High-level corruption track record","Prosecutorial & judicial independence","Coordination, strategy & data"];
+
+function issueBlock(it){
+  const cells=YEARS.map(y=>{
+    const raw=it.k[y];
+    if(!raw)return `<div title="${y}: \u2014" style="position:relative;flex:1;height:18px;border-radius:3px;background:var(--bg2);opacity:.4;"></div>`;
+    const st=STATUS[raw]||STATUS.MENTIONED;
+    const drop=raw==="NO FOLLOW-UP";
+    const bg=drop?HATCH:`background:${st.fill};`;
+    return `<div title="${y}: ${raw}" style="position:relative;flex:1;height:18px;border-radius:3px;${bg}"></div>`;
+  }).join('');
+  return `<div style="padding:5px 0;">
+    <div style="font-size:12.5px;line-height:1.35;color:var(--text);margin-bottom:4px;">${it.i}</div>
+    <div style="display:flex;gap:3px;">${cells}</div>
+  </div>`;
+}
+
+function panelFor(country){
+  const p=document.getElementById('panel');
+  const rows=DATA[country];
+  if(!rows){p.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:120px;color:var(--text3);font-size:13px;">Hover a shaded country to see each issue's progress from 2020 to 2025.</div>`;return;}
+  const byTheme={};rows.forEach(r=>{(byTheme[r.t]=byTheme[r.t]||[]).push(r);});
+  const yearHead=`<div style="display:flex;gap:3px;margin:2px 0 8px;">${YEARS.map(y=>`<div style="flex:1;text-align:center;font-size:9.5px;color:var(--text3);">'${y.slice(2)}</div>`).join('')}</div>`;
+  const body=order.filter(t=>byTheme[t]).map(t=>
+    `<div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:2px;">${t}</div>
+      ${byTheme[t].map(issueBlock).join('')}
+    </div>`).join('');
+  p.innerHTML=`<div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+      <h3 style="margin:0;font-size:18px;">${country}</h3>
+      <span style="font-size:12px;color:var(--text3);">${rows.length} issues \u00b7 2020\u20132025</span>
+    </div>
+    ${yearHead}${body}
+  </div>`;
+}
+
+const W=720,H=560;
+const svg=d3.select('#map').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+const proj=d3.geoConicConformal().rotate([-10,0]).center([5,54]).scale(700).translate([W/2,H/2]);
+const path=d3.geoPath(proj);
+let current=null;
+
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world=>{
+  const countries=topojson.feature(world,world.objects.countries).features;
+  svg.append('g').selectAll('path').data(countries).join('path')
+    .attr('d',path)
+    .attr('fill',d=>{const c=counts[d.properties.name];return c?color(c):(isDark?'#2C2C2A':'#FFFFFF');})
+    .attr('stroke',isDark?'rgba(255,255,255,.18)':'rgba(0,0,0,.18)').attr('stroke-width',0.6)
+    .style('cursor',d=>counts[d.properties.name]?'pointer':'default')
+    .on('mouseenter',function(e,d){if(!counts[d.properties.name])return;d3.select(this).attr('stroke',isDark?'#fff':'#000').attr('stroke-width',1.4).raise();panelFor(d.properties.name);})
+    .on('mouseleave',function(e,d){d3.select(this).attr('stroke',isDark?'rgba(255,255,255,.18)':'rgba(0,0,0,.18)').attr('stroke-width',0.6);panelFor(current);})
+    .on('click',function(e,d){if(!counts[d.properties.name])return;current=d.properties.name;panelFor(current);});
+  countries.filter(d=>counts[d.properties.name]).forEach(d=>{
+    const c=path.centroid(d);
+    if(c[0]&&c[1])svg.append('text').attr('x',c[0]).attr('y',c[1]).attr('text-anchor','middle').attr('font-size','10px').attr('font-weight','500').attr('fill',isDark?'#EEEDFE':'#26215C').attr('pointer-events','none').text(counts[d.properties.name]);
+  });
+  panelFor(null);
+}).catch(()=>{
+  document.getElementById('map').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px;">Map topology could not be loaded (needs internet access to jsDelivr).</div>';
+});
+</script>
+</body>
+</html>
