@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lobbying — issues by country (2020–2025)</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#f5f4ef; --bg3:#efeee8;
+    --text:#2b2a28; --text2:#5f5e5a; --text3:#8a8983;
+    --border:rgba(0,0,0,.14); --border2:rgba(0,0,0,.26);
+    --radius:12px; --radius-sm:8px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#26251f; --bg2:#2f2e27; --bg3:#3a382f;
+      --text:#ecebe4; --text2:#b4b2a9; --text3:#8a8983;
+      --border:rgba(255,255,255,.16); --border2:rgba(255,255,255,.3);
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+    line-height:1.6;padding:16px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px;margin:0 auto;}
+  h1{font-size:22px;font-weight:500;margin:0 0 4px;}
+  .sub{font-size:13px;color:var(--text2);margin:0 0 20px;}
+  h3{font-weight:500;}
+  #legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+    margin-bottom:16px;font-size:12px;color:var(--text2);}
+  #map{width:100%;background:var(--bg2);border-radius:var(--radius);}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+
+  /* floating per-country popup */
+  #tip{position:fixed;z-index:9999;width:320px;max-width:calc(100vw - 24px);
+    max-height:calc(100vh - 24px);overflow:auto;
+    background:var(--bg);color:var(--text);
+    border:0.5px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;box-shadow:0 8px 28px rgba(0,0,0,.22);
+    pointer-events:none;opacity:0;visibility:hidden;transition:opacity .12s;
+    font-family:var(--font);line-height:1.6;}
+  #tip.show{opacity:1;visibility:visible;}
+  #tip.pinned{pointer-events:auto;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2 class="sr-only">Map of Europe shading eight countries by number of lobbying issues; hovering or tapping a country shows each issue with its status across 2020 to 2025.</h2>
+
+<h1>Lobbying: issues by country</h1>
+<p class="sub">EC Rule of Law Report recommendations, 2020–2025. Hover (or tap) a shaded country to see each issue's progress.</p>
+
+<div id="legend"></div>
+
+<div id="map" role="img" aria-label="Map of Europe with eight countries shaded by issue count"></div>
+</div>
+
+<div id="tip" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const YEARS=["2020","2021","2022","2023","2024","2025"];
+const DATA={"Slovakia":[{"t":"Register & transparency","i":"Lack of lobbying register","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Definitions & scope","i":"Lack of lobbying regulation","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Definitions & scope","i":"Lack of definitions","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Oversight & enforcement","i":"Lack of sanctions","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Oversight & enforcement","i":"Lack of ethical code on lobbying","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}}],"Germany":[{"t":"Register & transparency","i":"Lobbyregister -introduction of national Lobbyregister","k":{"2020":"MENTIONED","2021":"SOME PROGRESS","2022":"IMPLEMENTED"}},{"t":"Register & transparency","i":"Lobbyregister - considerable exemptions of obligation to register in lobbyregister","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Register & transparency","i":"Lobbyregister - lack of real time reporting of lobby meetings","k":{"2025":"MENTIONED"}},{"t":"Register & transparency","i":"Lobbyregister - circumvention of need of registration by companies outsourcing their lobby activities","k":{"2023":"MENTIONED","2024":"IMPLEMENTED"}},{"t":"Register & transparency","i":"Lobbyregister - Gaps in the reporting of lobbying cost data","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"NO PROGRESS","2024":"IMPLEMENTED"}},{"t":"Register & transparency","i":"Lobbyregister - no recording of meetings with technical level in ministries","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"IMPLEMENTED"}},{"t":"Oversight & enforcement","i":"Lack of an independent, mandated, and well-resourced lobbying oversight body","k":{"2022":"MENTIONED","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Oversight & enforcement","i":"Lobbyregister - Weak punitive measures for breaches of lobbying regulation (sanctions)","k":{"2023":"MENTIONED","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Legislative footprint & disclosure","i":"Lobbyregister - no disclosure of specific legislation lobbied","k":{"2024":"IMPLEMENTED"}},{"t":"Legislative footprint & disclosure","i":"Introduction of Legislative Footprint","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"NO PROGRESS"}},{"t":"Legislative footprint & disclosure","i":"Introduction of Federal Transparency Law","k":{"2025":"MENTIONED"}}],"Bulgaria":[{"t":"Register & transparency","i":"Lobbying activities remain unregulated by law.","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"SOME PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}}],"Italy":[{"t":"Register & transparency","i":"Lack of operational lobbying register","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Definitions & scope","i":"No comprehensive regulation on lobbying (lobbying regulation fragmented)","k":{"2020":"MENTIONED","2021":"SOME PROGRESS","2022":"SOME PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"SOME PROGRESS"}},{"t":"Definitions & scope","i":"Need of precise legal definition of lobbyist","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}},{"t":"Revolving doors & cooling-off","i":"The provisions on revolving doors are provided only for public officials, and not to the holders of political offices","k":{"2020":"MENTIONED","2021":"NO FOLLOW-UP","2022":"SOME PROGRESS","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Legislative footprint & disclosure","i":"Lack of legislative footprint","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"SOME PROGRESS","2024":"NO PROGRESS","2025":"SOME PROGRESS"}},{"t":"Legislative footprint & disclosure","i":"Lack of provisions for disclosure requirements applying to decision makers and public officials","k":{"2020":"MENTIONED","2021":"SOME PROGRESS","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO PROGRESS","2025":"NO PROGRESS"}}],"Hungary":[{"t":"Register & transparency","i":"No mandatory registration of lobbyists and disclosure of contact reports.","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Definitions & scope","i":"Regulation of lobbying in Hungary is incomplete","k":{"2020":"MENTIONED","2021":"NO PROGRESS","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Definitions & scope","i":"No rules on the interaction with lobbyists as regards members of Parliament","k":{"2021":"MENTIONED","2022":"NO PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO PROGRESS"}},{"t":"Legislative footprint & disclosure","i":"No steps taken to prepare the code of conduct for persons in top executive functions, planned by 30 April 2024","k":{"2025":"MENTIONED"}}],"Netherlands":[{"t":"Register & transparency","i":"Limited lobby register, volunteer basis for lobbyist in place with the parliament","k":{"2021":"MENTIONED","2022":"SOME PROGRESS","2023":"NO PROGRESS","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Register & transparency","i":"Lack of Lobbying transparency register","k":{"2025":"MENTIONED"}},{"t":"Oversight & enforcement","i":"Lack of enforcement and monitoring vis-a-vis contact between lobbyists and office holders or civil servants","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Legislative footprint & disclosure","i":"Lack of legislative footprint","k":{"2024":"MENTIONED","2025":"NO FOLLOW-UP"}},{"t":"Legislative footprint & disclosure","i":"Establish stricter transparency rules on lobbying for members of government and parliament","k":{"2023":"MENTIONED","2024":"SOME PROGRESS","2025":"NO PROGRESS"}}],"Serbia":[{"t":"Register & transparency","i":"Records on lobbying contacts and annual report of lobbyists are not made public","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}},{"t":"Definitions & scope","i":"The legal definition of lobbying is overly narrow, recognizing only formal written contacts with persons holding top executive functions.","k":{"2024":"MENTIONED","2025":"NO PROGRESS"}}],"Ireland":[{"t":"Register & transparency","i":"Some relevant agencies excluded from the scope of the Lobbying Register","k":{"2025":"MENTIONED"}},{"t":"Definitions & scope","i":"Extend 2015 Act to lobbying by certain representative and issue-based bodies, including non-remunerated office-holders of such bodies","k":{"2023":"MENTIONED","2024":"IMPLEMENTED"}},{"t":"Definitions & scope","i":"Lobbying of senior officials in high-level bodies reported on same basis as for central and local government","k":{"2025":"IMPLEMENTED"}},{"t":"Oversight & enforcement","i":"Limited resources mean the Standards in Public Office Commission cannot proactively pursue non-compliance with post-employment restrictions","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO PROGRESS"}},{"t":"Oversight & enforcement","i":"Lack of powers for the Standards in Public Office Commission (SIPO) to monitor irregularities in post-employment/revolving doors restrictions","k":{"2021":"MENTIONED","2022":"NO FOLLOW-UP","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Oversight & enforcement","i":"Strengthen the monitoring and enforcement capacity and powers of the Standards in Public Office Commission (SIPO) in relation to lobbying","k":{"2022":"MENTIONED","2023":"SOME PROGRESS","2024":"SOME PROGRESS","2025":"NO FOLLOW-UP"}},{"t":"Revolving doors & cooling-off","i":"No enforcement provisions associated with post-employment provisions","k":{"2022":"MENTIONED","2023":"SOME PROGRESS","2024":"IMPLEMENTED"}},{"t":"Revolving doors & cooling-off","i":"Strengthen the existing ethics framework, including on revolving doors and lobbying","k":{"2022":"MENTIONED","2023":"SOME PROGRESS","2024":"IMPLEMENTED"}},{"t":"Revolving doors & cooling-off","i":"Cooling-off provisions only apply to lobbying and do not include a cooling-off period for designated public officials","k":{"2023":"MENTIONED","2024":"IMPLEMENTED"}},{"t":"Revolving doors & cooling-off","i":"Anti-avoidance provisions","k":{"2024":"IMPLEMENTED"}},{"t":"Revolving doors & cooling-off","i":"Extend cooling-off provisions","k":{"2025":"IMPLEMENTED"}},{"t":"Legislative footprint & disclosure","i":"Requirement for statutory review of the Regulation of Lobbying Act 2015","k":{"2022":"MENTIONED","2023":"NO FOLLOW-UP","2024":"NO FOLLOW-UP","2025":"NO FOLLOW-UP"}},{"t":"Legislative footprint & disclosure","i":"Need for sanctions for breaches of lobbying restrictions, including financial penalties and time-bound prohibitions on lobbying","k":{"2022":"MENTIONED","2023":"SOME PROGRESS","2024":"IMPLEMENTED"}},{"t":"Legislative footprint & disclosure","i":"Awareness raising for lobbyists and Designated Public Officials (DPOs)","k":{"2025":"MENTIONED"}}]};
+
+const STATUS={
+  "IMPLEMENTED":{fill:"#639922",txt:"#173404"},
+  "SOME PROGRESS":{fill:"#5DCAA5",txt:"#04342C"},
+  "MENTIONED":{fill:"#B4B2A9",txt:"#2C2C2A"},
+  "NO PROGRESS":{fill:"#F0997B",txt:"#4A1B0C"},
+  "NO FOLLOW-UP":{fill:"transparent",txt:"var(--text3)"}
+};
+const HATCH="background:repeating-linear-gradient(45deg,transparent,transparent 3px,var(--border) 3px,var(--border) 4px);border:1px dashed var(--border2);";
+
+const counts=Object.fromEntries(Object.entries(DATA).map(([k,v])=>[k,v.length]));
+const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+const scheme=isDark?['#26215C','#3C3489','#534AB7','#7F77DD']:['#EEEDFE','#CECBF6','#AFA9EC','#7F77DD'];
+const color=d3.scaleThreshold().domain([4,8,12]).range(scheme);
+
+const sBuckets=[['Mentioned','#B4B2A9'],['Some progress','#5DCAA5'],['Implemented','#639922'],['No progress','#F0997B']];
+document.getElementById('legend').innerHTML=
+  sBuckets.map(([lbl,c])=>`<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;background:${c};"></span>${lbl}</span>`).join('')+
+  `<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;${HATCH}"></span>No follow-up</span>`;
+
+const order=["Register & transparency","Definitions & scope","Oversight & enforcement","Revolving doors & cooling-off","Legislative footprint & disclosure"];
+
+function issueBlock(it){
+  const cells=YEARS.map(y=>{
+    const raw=it.k[y];
+    if(!raw)return `<div title="${y}: \u2014" style="position:relative;flex:1;height:18px;border-radius:3px;background:var(--bg2);opacity:.4;"></div>`;
+    const st=STATUS[raw]||STATUS.MENTIONED;
+    const drop=raw==="NO FOLLOW-UP";
+    const bg=drop?HATCH:`background:${st.fill};`;
+    return `<div title="${y}: ${raw}" style="position:relative;flex:1;height:18px;border-radius:3px;${bg}"></div>`;
+  }).join('');
+  return `<div style="padding:5px 0;">
+    <div style="font-size:12.5px;line-height:1.35;color:var(--text);margin-bottom:4px;">${it.i}</div>
+    <div style="display:flex;gap:3px;">${cells}</div>
+  </div>`;
+}
+
+function cardHTML(country){
+  const rows=DATA[country];
+  if(!rows)return '';
+  const byTheme={};rows.forEach(r=>{(byTheme[r.t]=byTheme[r.t]||[]).push(r);});
+  const yearHead=`<div style="display:flex;gap:3px;margin:2px 0 8px;">${YEARS.map(y=>`<div style="flex:1;text-align:center;font-size:9.5px;color:var(--text3);">'${y.slice(2)}</div>`).join('')}</div>`;
+  const body=order.filter(t=>byTheme[t]).map(t=>
+    `<div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:2px;">${t}</div>
+      ${byTheme[t].map(issueBlock).join('')}
+    </div>`).join('');
+  return `<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+      <h3 style="margin:0;font-size:16px;">${country}</h3>
+      <span style="font-size:12px;color:var(--text3);">${rows.length} issues \u00b7 2020\u20132025</span>
+    </div>${yearHead}${body}`;
+}
+
+const tip=document.getElementById('tip');
+let pinned=false;
+
+function placeTip(cx,cy){
+  const r=tip.getBoundingClientRect();
+  const pad=12,off=16;
+  let x=cx+off,y=cy+off;
+  if(x+r.width>innerWidth-pad) x=cx-off-r.width;
+  if(x<pad) x=pad;
+  if(y+r.height>innerHeight-pad) y=innerHeight-pad-r.height;
+  if(y<pad) y=pad;
+  tip.style.left=x+'px';tip.style.top=y+'px';
+}
+function showTip(country,cx,cy){
+  tip.innerHTML=cardHTML(country);
+  tip.classList.add('show');
+  placeTip(cx,cy);
+}
+function dismiss(){pinned=false;tip.classList.remove('show','pinned');}
+
+const W=720,H=560;
+const svg=d3.select('#map').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+const proj=d3.geoConicConformal().rotate([-10,0]).center([5,54]).scale(700).translate([W/2,H/2]);
+const path=d3.geoPath(proj);
+
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world=>{
+  const countries=topojson.feature(world,world.objects.countries).features;
+  const baseStroke=isDark?'rgba(255,255,255,.18)':'rgba(0,0,0,.18)';
+  svg.append('g').selectAll('path').data(countries).join('path')
+    .attr('d',path)
+    .attr('fill',d=>{const c=counts[d.properties.name];return c?color(c):(isDark?'#2C2C2A':'#FFFFFF');})
+    .attr('stroke',baseStroke).attr('stroke-width',0.6)
+    .style('cursor',d=>counts[d.properties.name]?'pointer':'default')
+    .on('mouseenter',function(e,d){
+      if(!counts[d.properties.name])return;
+      d3.select(this).attr('stroke',isDark?'#fff':'#000').attr('stroke-width',1.4).raise();
+      if(pinned)return;
+      showTip(d.properties.name,e.clientX,e.clientY);
+    })
+    .on('mousemove',function(e,d){
+      if(pinned||!counts[d.properties.name])return;
+      placeTip(e.clientX,e.clientY);
+    })
+    .on('mouseleave',function(e,d){
+      d3.select(this).attr('stroke',baseStroke).attr('stroke-width',0.6);
+      if(pinned)return;
+      tip.classList.remove('show');
+    })
+    .on('click',function(e,d){
+      if(!counts[d.properties.name])return;
+      e.stopPropagation();
+      pinned=true;tip.classList.add('pinned');
+      showTip(d.properties.name,e.clientX,e.clientY);
+    });
+  countries.filter(d=>counts[d.properties.name]).forEach(d=>{
+    const c=path.centroid(d);
+    if(c[0]&&c[1])svg.append('text').attr('x',c[0]).attr('y',c[1]).attr('text-anchor','middle').attr('font-size','10px').attr('font-weight','500').attr('fill',isDark?'#EEEDFE':'#26215C').attr('pointer-events','none').text(counts[d.properties.name]);
+  });
+}).catch(()=>{
+  document.getElementById('map').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px;">Map topology could not be loaded (needs internet access to jsDelivr).</div>';
+});
+
+// tap empty map / page to dismiss a pinned popup (data countries stop propagation)
+svg.on('click',dismiss);
+document.addEventListener('click',function(e){
+  if(pinned && !tip.contains(e.target)) dismiss();
+});
+</script>
+</body>
+</html>
