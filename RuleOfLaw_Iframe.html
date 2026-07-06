@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule of Law issues by country (2020–2025)</title>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#f5f4ef; --bg3:#efeee8;
+    --text:#2b2a28; --text2:#5f5e5a; --text3:#8a8983;
+    --border:rgba(0,0,0,.14); --border2:rgba(0,0,0,.26);
+    --radius:12px; --radius-sm:8px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#26251f; --bg2:#2f2e27; --bg3:#3a382f;
+      --text:#ecebe4; --text2:#b4b2a9; --text3:#8a8983;
+      --border:rgba(255,255,255,.16); --border2:rgba(255,255,255,.3);
+    }
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+    line-height:1.6;padding:16px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:760px;margin:0 auto;}
+  h1{font-size:22px;font-weight:500;margin:0 0 4px;}
+  .sub{font-size:13px;color:var(--text2);margin:0 0 20px;}
+  h3{font-weight:500;}
+  #legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+    margin-bottom:16px;font-size:12px;color:var(--text2);}
+  #map{width:100%;background:var(--bg2);border-radius:var(--radius);}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+
+  /* floating per-country popup */
+  #tip{position:fixed;z-index:9999;width:320px;max-width:calc(100vw - 24px);
+    max-height:calc(100vh - 24px);overflow:auto;
+    background:var(--bg);color:var(--text);
+    border:0.5px solid var(--border);border-radius:var(--radius);
+    padding:14px 16px;box-shadow:0 8px 28px rgba(0,0,0,.22);
+    pointer-events:none;opacity:0;visibility:hidden;transition:opacity .12s;
+    font-family:var(--font);line-height:1.6;}
+  #tip.show{opacity:1;visibility:visible;}
+  #tip.pinned{pointer-events:auto;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2 class="sr-only">Map of Europe shading eight countries by number of rule-of-law issues across five areas; hovering or tapping a country shows each issue with its status across 2020 to 2025.</h2>
+
+<h1>Rule of Law: Qualitative content Analysis of the Anti-Corruption Pillar</h1>
+<p class="sub">EC Rule of Law Report issues covered across five thematic areas — Criminalisation, Enforcement, Lobbying, Conflict of Interest and Political Finance — 2020–2025. Hover (or tap) a shaded country to see each issue's progress.</p>
+
+<div id="legend"></div>
+
+<div id="map" role="img" aria-label="Map of Europe with eight countries shaded by issue count"></div>
+</div>
+
+<div id="tip" aria-hidden="true"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="data.js"></script>
+<script>
+const YEARS=["2020","2021","2022","2023","2024","2025"];
+// DATA is loaded from data.js (edit that file to change issues/statuses)
+
+const STATUS={
+  "IMPLEMENTED":{fill:"#639922",txt:"#173404"},
+  "SOME PROGRESS":{fill:"#5DCAA5",txt:"#04342C"},
+  "MENTIONED":{fill:"#B4B2A9",txt:"#2C2C2A"},
+  "NO PROGRESS":{fill:"#F0997B",txt:"#4A1B0C"},
+  "NO FOLLOW-UP":{fill:"transparent",txt:"var(--text3)"}
+};
+const HATCH="background:repeating-linear-gradient(45deg,transparent,transparent 3px,var(--border) 3px,var(--border) 4px);border:1px dashed var(--border2);";
+
+// Excel uses composite labels (e.g. "SOME PROGRESS / RECOMMENDATION ISSUED").
+// Fold each onto one of the five buckets; most-progressed token wins,
+// a bare "RECOMMENDATION ISSUED" maps to Mentioned-level.
+function normStatus(raw){
+  if(!raw) return null;
+  const s=raw.toUpperCase();
+  if(s.includes("IMPLEMENTED")) return "IMPLEMENTED";
+  if(s.includes("SOME PROGRESS")) return "SOME PROGRESS";
+  if(s.includes("NO PROGRESS")) return "NO PROGRESS";
+  if(s.includes("NO FOLLOW-UP")) return "NO FOLLOW-UP";
+  if(s.includes("MENTIONED")) return "MENTIONED";
+  if(s.includes("RECOMMENDATION")) return "MENTIONED";
+  return "MENTIONED";
+}
+
+const counts=Object.fromEntries(Object.entries(DATA).map(([k,v])=>[k,v.length]));
+const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+const FILL=isDark?'#534AB7':'#AFA9EC';
+
+const sBuckets=[['Mentioned','#B4B2A9'],['Some progress','#5DCAA5'],['Implemented','#639922'],['No progress','#F0997B']];
+document.getElementById('legend').innerHTML=
+  sBuckets.map(([lbl,c])=>`<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;background:${c};"></span>${lbl}</span>`).join('')+
+  `<span style="display:flex;align-items:center;gap:5px;"><span style="width:13px;height:13px;border-radius:3px;${HATCH}"></span>No follow-up</span>`;
+
+const order=["Criminalisation","Enforcement","Lobbying","Conflict of Interest","Political Finance"];
+
+function issueBlock(it){
+  const cells=YEARS.map(y=>{
+    const raw=it.k[y];
+    if(!raw)return `<div title="${y}: —" style="position:relative;flex:1;height:18px;border-radius:3px;background:var(--bg2);opacity:.4;"></div>`;
+    const norm=normStatus(raw);
+    const st=STATUS[norm]||STATUS.MENTIONED;
+    const drop=norm==="NO FOLLOW-UP";
+    const bg=drop?HATCH:`background:${st.fill};`;
+    return `<div title="${y}: ${raw}" style="position:relative;flex:1;height:18px;border-radius:3px;${bg}"></div>`;
+  }).join('');
+  return `<div style="padding:5px 0;">
+    <div style="font-size:12.5px;line-height:1.35;color:var(--text);margin-bottom:4px;">${it.i}</div>
+    <div style="display:flex;gap:3px;">${cells}</div>
+  </div>`;
+}
+
+function cardHTML(country){
+  const rows=DATA[country];
+  if(!rows)return '';
+  const byTheme={};rows.forEach(r=>{(byTheme[r.t]=byTheme[r.t]||[]).push(r);});
+  const yearHead=`<div style="display:flex;gap:3px;margin:2px 0 8px;">${YEARS.map(y=>`<div style="flex:1;text-align:center;font-size:9.5px;color:var(--text3);">'${y.slice(2)}</div>`).join('')}</div>`;
+  const body=order.filter(t=>byTheme[t]).map(t=>
+    `<div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:2px;">${t}</div>
+      ${byTheme[t].map(issueBlock).join('')}
+    </div>`).join('');
+  return `<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+      <h3 style="margin:0;font-size:16px;">${country}</h3>
+      <span style="font-size:12px;color:var(--text3);">${rows.length} issues · 2020–2025</span>
+    </div>${yearHead}${body}`;
+}
+
+const tip=document.getElementById('tip');
+let pinned=false;
+
+function placeTip(cx,cy){
+  const r=tip.getBoundingClientRect();
+  const pad=12,off=16;
+  let x=cx+off,y=cy+off;
+  if(x+r.width>innerWidth-pad) x=cx-off-r.width;
+  if(x<pad) x=pad;
+  if(y+r.height>innerHeight-pad) y=innerHeight-pad-r.height;
+  if(y<pad) y=pad;
+  tip.style.left=x+'px';tip.style.top=y+'px';
+}
+function showTip(country,cx,cy){
+  tip.innerHTML=cardHTML(country);
+  tip.classList.add('show');
+  placeTip(cx,cy);
+}
+function dismiss(){pinned=false;tip.classList.remove('show','pinned');}
+
+const W=720,H=560;
+const svg=d3.select('#map').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+const proj=d3.geoConicConformal().rotate([-10,0]).center([5,54]).scale(700).translate([W/2,H/2]);
+const path=d3.geoPath(proj);
+
+d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world=>{
+  const countries=topojson.feature(world,world.objects.countries).features;
+  const baseStroke=isDark?'rgba(255,255,255,.18)':'rgba(0,0,0,.18)';
+  svg.append('g').selectAll('path').data(countries).join('path')
+    .attr('d',path)
+    .attr('fill',d=>{const c=counts[d.properties.name];return c?FILL:(isDark?'#2C2C2A':'#FFFFFF');})
+    .attr('stroke',baseStroke).attr('stroke-width',0.6)
+    .style('cursor',d=>counts[d.properties.name]?'pointer':'default')
+    .on('mouseenter',function(e,d){
+      if(!counts[d.properties.name])return;
+      d3.select(this).attr('stroke',isDark?'#fff':'#000').attr('stroke-width',1.4).raise();
+      if(pinned)return;
+      showTip(d.properties.name,e.clientX,e.clientY);
+    })
+    .on('mousemove',function(e,d){
+      if(pinned||!counts[d.properties.name])return;
+      placeTip(e.clientX,e.clientY);
+    })
+    .on('mouseleave',function(e,d){
+      d3.select(this).attr('stroke',baseStroke).attr('stroke-width',0.6);
+      if(pinned)return;
+      tip.classList.remove('show');
+    })
+    .on('click',function(e,d){
+      if(!counts[d.properties.name])return;
+      e.stopPropagation();
+      pinned=true;tip.classList.add('pinned');
+      showTip(d.properties.name,e.clientX,e.clientY);
+    });
+}).catch(()=>{
+  document.getElementById('map').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px;">Map topology could not be loaded (needs internet access to jsDelivr).</div>';
+});
+
+// tap empty map / page to dismiss a pinned popup (data countries stop propagation)
+svg.on('click',dismiss);
+document.addEventListener('click',function(e){
+  if(pinned && !tip.contains(e.target)) dismiss();
+});
+</script>
+</body>
+</html>
